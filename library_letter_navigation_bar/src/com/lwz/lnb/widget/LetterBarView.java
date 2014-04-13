@@ -111,15 +111,16 @@ public class LetterBarView extends View {
 					if (mOnLetterTouchListener != null) {
 						mOnLetterTouchListener.onLetterTouch(letter);
 					}
+					invalidate();
 				}
 				break;
 			case MotionEvent.ACTION_UP:
 				mLetterBarFocus = false;
 				mLastIndex = -1;
+				invalidate();
 				dismissSelctedLetterOverlay();
 				break;
 			}
-		invalidate();
 		return true;
 	}
 	
