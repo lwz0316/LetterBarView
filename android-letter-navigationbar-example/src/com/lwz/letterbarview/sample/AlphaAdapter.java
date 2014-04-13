@@ -1,4 +1,4 @@
-package com.lwz.letterbarview.sample.adpt;
+package com.lwz.letterbarview.sample;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +13,6 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.lwz.letterbarview.sample.R;
-import com.lwz.letterbarview.sample.bean.AlphaWrapper;
 
 public abstract class AlphaAdapter<T extends AlphaWrapper> extends BaseAdapter {
 	

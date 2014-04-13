@@ -1,4 +1,4 @@
-package com.lwz.letterbarview.sample.bean;
+package com.lwz.letterbarview.sample;
 
 public interface AlphaWrapper {
 	public String getAlpha();

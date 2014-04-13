@@ -10,9 +10,6 @@ import android.widget.TextView;
 
 import com.lwz.letterbarview.lib.LetterBarView;
 import com.lwz.letterbarview.lib.LetterBarView.OnLetterSelectListener;
-import com.lwz.letterbarview.sample.adpt.AlphaAdapter;
-import com.lwz.letterbarview.sample.adpt.ViewHolder;
-import com.lwz.letterbarview.sample.bean.News;
 
 public class MainActivity extends Activity {
 

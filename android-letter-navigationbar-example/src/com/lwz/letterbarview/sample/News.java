@@ -1,8 +1,7 @@
-package com.lwz.letterbarview.sample.bean;
+package com.lwz.letterbarview.sample;
 
 import java.util.Locale;
 
-import com.lwz.letterbarview.sample.utils.PinyinUtil;
 
 public class News implements AlphaWrapper {
 

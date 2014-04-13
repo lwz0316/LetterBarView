@@ -1,4 +1,4 @@
-﻿package com.lwz.letterbarview.sample.adpt;
+﻿package com.lwz.letterbarview.sample;
 
 import android.util.SparseArray;
 import android.view.View;
