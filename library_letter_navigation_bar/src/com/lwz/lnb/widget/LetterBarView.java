@@ -262,7 +262,7 @@ public class LetterBarView extends View {
 	private void resetPaintForLetterBar(boolean isFocus) {
 		mPaint.reset();
 		// 若导航栏被焦点，则高亮显示
-		mPaint.setColor( isFocus ? mLetterFocusedColor : mLetterBarColor);
+		mPaint.setColor( isFocus ? mLetterBarFocusedColor : mLetterBarColor);
 	}
 	
 	/**
