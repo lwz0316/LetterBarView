@@ -22,23 +22,23 @@ import android.view.View;
  * 若排序的 item 首字为中文时，需要将每个 item 的首个汉字转化为拼音然后进行排序.<br>将汉字转换为拼音可用 pinyin4j.jar 来转换
  * </p>
  * <p>
- * 当点击导航条的字母时，会触发监听事件,若要监听，则可以使用 {@link #setOnLetterTouchListener(OnLetterTouchListener)} 来设置
+ * 当点击导航条的字母时，会触发监听事件,若要监听，则可以使用 {@link #setOnLetterSelectListener(OnLetterSelectListener)} 来设置
  * </p>
  * 
  */
 public class LetterBarView extends View {
 	
 	/**
-	 * 触摸字母监听
+	 * 选中字母监听
 	 */
-	public interface OnLetterTouchListener {
+	public interface OnLetterSelectListener {
 		/**
-		 * @param s 被触摸的字母
+		 * @param s 被选中的字母
 		 */
 		public void onLetterTouch(String s);
 	}
 
-	private OnLetterTouchListener mOnLetterTouchListener;
+	private OnLetterSelectListener mOnLetterSelectListener;
 
 	private String[] mLetters = {"#", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
 			"K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
@@ -56,7 +56,7 @@ public class LetterBarView extends View {
 	
 	private Paint mPaint;
 	private RectF mOverlayRect ;
-	private float mLetterSpaceHight = 0;
+	private float mLetterSpaceHeight = 0;
 	
 	private int mLetterBarColor = Color.parseColor("#66000000");
 	private int mLetterBarFocusedColor = Color.parseColor("#88000000");
@@ -66,6 +66,7 @@ public class LetterBarView extends View {
 	private int mOverlayTextColor = Color.WHITE;
 	
 	private float mOverlayTextSize = 120;
+	private float mOverlayRound = 20;
 	
 	public LetterBarView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
@@ -108,8 +109,8 @@ public class LetterBarView extends View {
 				if (mLastIndex != currentIndex && currentIndex >= 0 && currentIndex < mCount) {
 					mLastIndex = currentIndex;
 					final String letter = mLetters[currentIndex];
-					if (mOnLetterTouchListener != null) {
-						mOnLetterTouchListener.onLetterTouch(letter);
+					if (mOnLetterSelectListener != null) {
+						mOnLetterSelectListener.onLetterTouch(letter);
 					}
 					invalidate();
 				}
@@ -118,13 +119,16 @@ public class LetterBarView extends View {
 				mLetterBarFocus = false;
 				mLastIndex = -1;
 				invalidate();
-				dismissSelctedLetterOverlay();
+				dismissLetterOverlay();
 				break;
 			}
 		return true;
 	}
 	
-	private void dismissSelctedLetterOverlay() {
+	/**
+	 * 消失字母弹出层
+	 */
+	private void dismissLetterOverlay() {
 		postDelayed(new Runnable() {
 			
 			@Override
@@ -139,25 +143,32 @@ public class LetterBarView extends View {
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 		
-		calculateLetterBarParams();
+		calculateLetterBarParams(mLetterSpaceHeight);
 		
 		drawLetterBarBackground(canvas);
-		drawLetters(canvas, mLetterBarWidth, mLetterSpaceHight);
-		drawOverlayLetter(canvas);
+		drawLetters(canvas, mLetterBarWidth, mLetterSpaceHeight);
 	}
 	
-	private void calculateLetterBarParams() {
-		calculateLetterSpaceHight();
+	/**
+	 * 计算字母导航条的参数
+	 * <p> 根据字母的高度来计算 导航条的宽度 和 其在 X 轴的位置
+	 * @param letterSpaceHeight 根据字母的高度
+	 */
+	private void calculateLetterBarParams(float letterSpaceHeight) {
+		calculateLetterSpaceHeight();
 		
 		// 导航栏的宽度
-		mLetterBarWidth = Math.min( Math.max(mLetterSpaceHight, mLetterBarWidth), LETTER_BAR_MAX_WIDTH);
+		mLetterBarWidth = Math.min( Math.max(letterSpaceHeight, mLetterBarWidth), LETTER_BAR_MAX_WIDTH);
 		// 计算 导航栏在 x 轴的位移
 		mLetterBarXOffset = getWidth() - mLetterBarWidth;
 	}
 	
-	private void calculateLetterSpaceHight() {
-		if( mLetterSpaceHight <= 0f ) {
-			mLetterSpaceHight = (getHeight() - getPaddingTop() - getPaddingBottom()) / (float)mCount;
+	/**
+	 * 计算每个字母所占空间的高度
+	 */
+	private void calculateLetterSpaceHeight() {
+		if( mLetterSpaceHeight <= 0f ) {
+			mLetterSpaceHeight = (getHeight() - getPaddingTop() - getPaddingBottom()) / (float)mCount;
 		}
 	}
 	
@@ -176,28 +187,33 @@ public class LetterBarView extends View {
 	 * 绘制字母
 	 * @param canvas
 	 * @param letterBarWidth	导航栏宽度
-	 * @param letterSpaceHight 字母的固定高度
+	 * @param letterSpaceHeight 字母的固定高度
 	 */
-	private void drawLetters(Canvas canvas, float letterBarWidth, float letterSpaceHight ) {
-		resetPaintForLetter(letterSpaceHight);
-		float lastYPos = getPaddingTop() + calculateTextVerticalOffset(letterSpaceHight, mPaint);
+	private void drawLetters(Canvas canvas, float letterBarWidth, float letterSpaceHeight ) {
+		resetPaintForLetter(letterSpaceHeight, false);
+		float lastYPos = getPaddingTop() + calculateTextVerticalOffset(letterSpaceHeight, mPaint);
 		for (int i = 0; i < mCount; i++) {
 			boolean isLetterFocus = ( i == mLastIndex );
 			String letter = mLetters[i];
 			if( isLetterFocus ) {
-				mPaint.setColor(mLetterFocusedColor);
+				resetPaintForLetter(letterSpaceHeight, true);
 			}
 			// 设置字的位置为居中显示
 			float xPos = mLetterBarXOffset + letterBarWidth / 2;
 			canvas.drawText(letter, xPos, lastYPos, mPaint);
-			lastYPos += letterSpaceHight;
+			lastYPos += letterSpaceHeight;
 			if( isLetterFocus ) {
 				mSelectedLetter = mLetters[i];
-				mPaint.setColor(Color.WHITE);
+				drawOverlayLetter(canvas);
+				resetPaintForLetter(letterSpaceHeight, false);
 			}
 		}
 	}
 	
+	/**
+	 * 绘制弹出层上的字母（选中的字母）
+	 * @param canvas
+	 */
 	private void drawOverlayLetter(Canvas canvas) {
 		if( TextUtils.isEmpty(mSelectedLetter) ) {
 			return;
@@ -207,30 +223,51 @@ public class LetterBarView extends View {
 		canvas.drawText(mSelectedLetter, getWidth() / 2, calculateTextVerticalOffset(getHeight(), mPaint) , mPaint);
 	}
 	
+	/**
+	 * 绘制选中字母的弹出层背景
+	 * @param canvas
+	 */
 	private void drawOverlayBackground(Canvas canvas) {
 		resetPaintForOverlayBackground();
+		// 设置弹出层为屏幕中心
 		mOverlayRect.offsetTo((getWidth() - mOverlayRect.right + mOverlayRect.left) / 2 ,
 				(getHeight() - mOverlayRect.bottom + mOverlayRect.top) / 2);
-		canvas.drawRoundRect(mOverlayRect, 20, 20, mPaint);
+		canvas.drawRoundRect(mOverlayRect, mOverlayRound, mOverlayRound, mPaint);
 	}
 	
-	public void setOnLetterTouchListener(OnLetterTouchListener l) {
-		this.mOnLetterTouchListener = l;
+	/**
+	 * 设置字母选中监听
+	 * @param l
+	 */
+	public void setOnLetterSelectListener(OnLetterSelectListener l) {
+		this.mOnLetterSelectListener = l;
 	}
 	
-	private void resetPaintForLetter(float letterHeight) {
+	/**
+	 * 重设画笔。绘制字母
+	 * @param letterSpaceHeight	字母空间的高度。用此来计算 字体大小
+	 * @param isFocused 字母是否为选中状态
+	 */
+	private void resetPaintForLetter(float letterSpaceHeight, boolean isFocused) {
 		mPaint.reset();
-		mPaint.setTextSize( (letterHeight > mLetterBarWidth ? mLetterBarWidth : letterHeight ) * 0.6f);
-		mPaint.setColor(mLetterColor);
+		mPaint.setTextSize( (letterSpaceHeight > mLetterBarWidth ? mLetterBarWidth : letterSpaceHeight ) * 0.6f);
+		mPaint.setColor(isFocused ? mLetterBarFocusedColor : mLetterColor);
 		mPaint.setTextAlign(Align.CENTER);
 	}
 	
+	/**
+	 * 重设画笔。绘制导航条
+	 * @param isFocus 导航栏是否为焦点状态
+	 */
 	private void resetPaintForLetterBar(boolean isFocus) {
 		mPaint.reset();
 		// 若导航栏被焦点，则高亮显示
-		mPaint.setColor( isFocus ? mLetterBarFocusedColor : mLetterBarColor);
+		mPaint.setColor( isFocus ? mLetterFocusedColor : mLetterBarColor);
 	}
 	
+	/**
+	 * 重设画笔。绘制弹出层上的字母
+	 */
 	private void resetPaintForOverlaySelectLetter() {
 		mPaint.reset();
 		mPaint.setTextSize(mOverlayTextSize);
@@ -238,14 +275,23 @@ public class LetterBarView extends View {
 		mPaint.setTextAlign(Align.CENTER);
 	}
 	
+	/**
+	 *  重设画笔。绘制弹出层背景
+	 */
 	private void resetPaintForOverlayBackground() {
 		mPaint.reset();
 		mPaint.setColor(mOverlayColor);
 	}
 	
-	private float calculateTextVerticalOffset(float containerHeight, Paint paint) {
+	/**
+	 * 计算文字垂直居中的偏移量
+	 * @param spaceHeight	文字所占空间的高度
+	 * @param paint	当前绘制该文字的画笔.用来获取 {@link android.graphics.Paint.FontMetrics}
+	 * @return
+	 */
+	private float calculateTextVerticalOffset(float spaceHeight, Paint paint) {
 		FontMetrics metrics = paint.getFontMetrics();
-		return containerHeight / 2 + (metrics.bottom - metrics.top) / 4;
+		return spaceHeight / 2 + (metrics.bottom - metrics.top) / 4;
 	}
 	
 	public void setLetterSet(String[] letters) {
@@ -281,6 +327,10 @@ public class LetterBarView extends View {
 	
 	public void setOverlayTextSize(float size) {
 		mOverlayTextSize = size;
+	}
+	
+	public void setOverlayRound(float round) {
+		mOverlayRound = round;
 	}
 	
 	public void setOVerlayTextSize(int unit, float size) {
