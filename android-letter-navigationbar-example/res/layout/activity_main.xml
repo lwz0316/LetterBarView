@@ -2,21 +2,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF" >
+    android:background="@android:color/white" >
 
     <ListView
-        android:id="@+id/list"
+        android:id="@+id/listview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingRight="20dp"
-        android:cacheColorHint="#00000000">
-    </ListView>
-    <com.lwz.lnb.widget.LetterBarView 
+        android:cacheColorHint="#00000000"
+        android:paddingRight="20dp" />
+
+    <com.lwz.letterbarview.lib.LetterBarView
         android:id="@+id/letter_bar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="right"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"/>
+        android:paddingBottom="10dp"
+        android:paddingTop="10dp" />
 
 </FrameLayout>
