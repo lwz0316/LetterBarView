@@ -35,7 +35,7 @@ public class LetterBarView extends View {
 		/**
 		 * @param s 被选中的字母
 		 */
-		public void onLetterTouch(String s);
+		public void onLetterSelect(String s);
 	}
 
 	private OnLetterSelectListener mOnLetterSelectListener;
@@ -110,7 +110,7 @@ public class LetterBarView extends View {
 					mLastIndex = currentIndex;
 					final String letter = mLetters[currentIndex];
 					if (mOnLetterSelectListener != null) {
-						mOnLetterSelectListener.onLetterTouch(letter);
+						mOnLetterSelectListener.onLetterSelect(letter);
 					}
 					invalidate();
 				}

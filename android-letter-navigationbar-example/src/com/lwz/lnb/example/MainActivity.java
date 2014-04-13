@@ -14,7 +14,7 @@ import android.widget.ListView;
 import com.lwz.lnb.adpt.CustomListAdapter;
 import com.lwz.lnb.utils.PinyinUtil;
 import com.lwz.lnb.widget.LetterBarView;
-import com.lwz.lnb.widget.LetterBarView.OnLetterTouchListener;
+import com.lwz.lnb.widget.LetterBarView.OnLetterSelectListener;
 
 public class MainActivity extends Activity {
 
@@ -41,10 +41,10 @@ public class MainActivity extends Activity {
 	private void findView() {
 		mList = (ListView)findViewById(R.id.list);
 		mLetterBar = (LetterBarView) findViewById(R.id.letter_bar);
-		mLetterBar.setOnLetterTouchListener(new OnLetterTouchListener() {
+		mLetterBar.setOnLetterSelectListener(new OnLetterSelectListener() {
 			
 			@Override
-			public void onLetterTouch(String s) {
+			public void onLetterSelect(String s) {
 				setListSelection(s);
 			}
 		});
