@@ -251,7 +251,7 @@ public class LetterBarView extends View {
 	private void resetPaintForLetter(float letterSpaceHeight, boolean isFocused) {
 		mPaint.reset();
 		mPaint.setTextSize( (letterSpaceHeight > mLetterBarWidth ? mLetterBarWidth : letterSpaceHeight ) * 0.6f);
-		mPaint.setColor(isFocused ? mLetterBarFocusedColor : mLetterColor);
+		mPaint.setColor(isFocused ? mLetterFocusedColor : mLetterColor);
 		mPaint.setTextAlign(Align.CENTER);
 	}
 	
