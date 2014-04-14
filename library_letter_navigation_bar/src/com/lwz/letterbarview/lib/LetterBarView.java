@@ -1,5 +1,7 @@
 package com.lwz.letterbarview.lib;
 
+import com.lwz.lnb.R;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
@@ -7,9 +9,12 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.FontMetrics;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.StateListDrawable;
 import android.graphics.RectF;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.StateSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -51,12 +56,12 @@ public class LetterBarView extends View {
 	private final float LETTER_BAR_MAX_WIDTH = 80;
 	
 	// 导航栏在 x 轴的位移
-	private float mLetterBarXOffset = 0;
+	private float mLetterBarXOffset;
 	private String mSelectedLetter;
 	
 	private Paint mPaint;
 	private RectF mOverlayRect ;
-	private float mLetterSpaceHeight = 0;
+	private float mLetterSpaceHeight;
 	
 	private int mLetterBarColor = Color.parseColor("#66000000");
 	private int mLetterBarFocusedColor = Color.parseColor("#88000000");
@@ -82,10 +87,28 @@ public class LetterBarView extends View {
 		super(context);
 		init();
 	}
-
+	Drawable mDD ;
 	private void init() {
 		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mOverlayRect = new RectF(0, 0, 200, 200);
+		setBackgroundColor(Color.TRANSPARENT);
+		
+		mDD = getResources().getDrawable(R.drawable.dd);
+		mDD.setCallback(this);
+		
+	}
+	
+	@Override
+	protected void drawableStateChanged() {
+		if( mDD != null && mDD.isStateful() ) {
+			mDD.setState(getDrawableState());
+		}
+		super.drawableStateChanged();
+	}
+	
+	@Override
+	protected boolean verifyDrawable(Drawable who) {
+		return who == mDD || super.verifyDrawable(who);
 	}
 	
 	@Override
@@ -136,7 +159,7 @@ public class LetterBarView extends View {
 				mSelectedLetter = null;
 				invalidate();
 			}
-		}, 500);
+		}, 1000);
 	}
 
 	@Override
@@ -147,6 +170,7 @@ public class LetterBarView extends View {
 		
 		drawLetterBarBackground(canvas);
 		drawLetters(canvas, mLetterBarWidth, mLetterSpaceHeight);
+		
 	}
 	
 	/**
@@ -181,6 +205,14 @@ public class LetterBarView extends View {
 	private void drawLetterBarBackground(Canvas canvas) {
 		resetPaintForLetterBar(mLetterBarFocus);
 		canvas.drawRect(mLetterBarXOffset, 0, getWidth(), getHeight(), mPaint);
+		
+		canvas.save();
+		canvas.translate(400, 400);
+		mDD.setBounds(400, 400, 400 + 200, 400 + 200);
+		this.setFocusable(mLetterBarFocus);
+		this.setSelected(mLetterBarFocus);
+		mDD.draw(canvas);
+		canvas.restore();
 	}
 	
 	/**
@@ -294,45 +326,89 @@ public class LetterBarView extends View {
 		return spaceHeight / 2 + (metrics.bottom - metrics.top) / 4;
 	}
 	
+	/**
+	 * 设置字母导航条里的字母集
+	 * @param letters
+	 */
 	public void setLetterSet(String[] letters) {
 		mLetters = letters;
 		mCount = mLetters.length;
 	}
 	
-	public void setSelectLetterOverlaySize(int width, int height) {
+	/**
+	 * 设置选中字母弹出层的大小
+	 * @param width	宽度
+	 * @param height 高度
+	 */
+	public void setSelectLetterOverlaySize(float width, float height) {
 		mOverlayRect.set(0, 0, width, height);
 	}
 	
+	/**
+	 * 设置字母条的宽度
+	 * @param width
+	 */
 	public void setLetterBarWidth(float width) {
 		mLetterBarWidth = width;
 	}
 	
+	/**
+	 * 设置字母条的颜色
+	 * @param normalColor 未获得焦点的颜色
+	 * @param focusedColor 获得焦点的颜色
+	 */
 	public void setLetterBarColor(int normalColor, int focusedColor) {
 		mLetterBarColor = normalColor;
 		mLetterBarFocusedColor = focusedColor;
 	}
 	
+	/**
+	 * 设置字母的颜色
+	 * @param normalColor 未选中的颜色
+	 * @param focusedColor 选中的颜色
+	 */
 	public void setLetterColor(int normalColor, int focusedColor) {
 		mLetterColor = normalColor;
 		mLetterFocusedColor = focusedColor;
 	}
 	
+	/**
+	 * 设置字母弹出层的背景颜色
+	 * @param color
+	 */
 	public void setOverlayColor(int color) {
 		mOverlayColor = color;
 	}
 	
+	/**
+	 * 设置字母弹出层的文字颜色
+	 * @param color
+	 */
 	public void setOverlayTextColor(int color) {
 		mOverlayTextColor = color;
 	}
 	
-	public void setOverlayTextSize(float size) {
-		mOverlayTextSize = size;
-	}
-	
+	/**
+	 * 设置弹出层的圆角
+	 * @param round
+	 */
 	public void setOverlayRound(float round) {
 		mOverlayRound = round;
 	}
 	
+	/**
+	 * 设置字母弹出层的文字大小
+	 * @param size
+	 */
+	public void setOverlayTextSize(float size) {
+		mOverlayTextSize = size;
+	}
+	
+	/**
+	 * 设置字母弹出层的文字大小 
+	 * @param unit	单位 .See {@link TypedValue} for the possible dimension units.
+	 * @param size	单位下的大小
+	 */
 	public void setOVerlayTextSize(int unit, float size) {
 		Context c = getContext();
         Resources r;
