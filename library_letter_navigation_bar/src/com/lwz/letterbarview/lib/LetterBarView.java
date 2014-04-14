@@ -3,18 +3,20 @@ package com.lwz.letterbarview.lib;
 import com.lwz.lnb.R;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.FontMetrics;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
-import android.graphics.RectF;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.StateSet;
+import android.util.FloatMath;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -52,63 +54,82 @@ public class LetterBarView extends View {
 
 	// 是否绘制字母导航栏背景。 当用户点击时绘制
 	private boolean mLetterBarFocus = false;
-	private float mLetterBarWidth = 40;
-	private final float LETTER_BAR_MAX_WIDTH = 80;
+	private float mLetterBarWidth;
 	
 	// 导航栏在 x 轴的位移
 	private float mLetterBarXOffset;
-	private String mSelectedLetter;
 	
 	private Paint mPaint;
-	private RectF mOverlayRect ;
 	private float mLetterSpaceHeight;
 	
-	private int mLetterBarColor = Color.parseColor("#66000000");
-	private int mLetterBarFocusedColor = Color.parseColor("#88000000");
-	private int mLetterColor = Color.WHITE;
-	private int mLetterFocusedColor = Color.BLUE;
-	private int mOverlayColor = Color.parseColor("#88000000");
-	private int mOverlayTextColor = Color.WHITE;
+	private Drawable mLetterBarBackground;
+	private ColorStateList mLetterBarTexColorStateList;
+	private Drawable mOverlayBackground;
 	
+	private int mOverlayTextColor = Color.WHITE;
 	private float mOverlayTextSize = 120;
-	private float mOverlayRound = 20;
 	
 	public LetterBarView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		init();
+		init(attrs);
 	}
 
 	public LetterBarView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		init();
+		init(attrs);
 	}
 
 	public LetterBarView(Context context) {
 		super(context);
-		init();
+		init(null);
 	}
-	Drawable mDD ;
-	private void init() {
+	
+	private void init(AttributeSet attrs) {
 		mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-		mOverlayRect = new RectF(0, 0, 200, 200);
 		setBackgroundColor(Color.TRANSPARENT);
 		
-		mDD = getResources().getDrawable(R.drawable.dd);
-		mDD.setCallback(this);
+		setLetterBarBackgrond(Color.parseColor("#88000000"), Color.parseColor("#66000000"));
+		setLetterBarTextColor(Color.BLUE, Color.WHITE);
+		setOverlayBackgroundColor(Color.parseColor("#88000000"));
 		
+		if( attrs != null ) {
+			TypedArray a = getResources().obtainAttributes(attrs, R.styleable.LetterBar);
+			
+			if( a.hasValue(R.styleable.LetterBar_lbLetterBarBackground) ) {
+				mLetterBarBackground = a.getDrawable(R.styleable.LetterBar_lbLetterBarBackground);
+			}
+			if( a.hasValue(R.styleable.LetterBar_lbLetterBarTextColor) ) {
+				mLetterBarTexColorStateList = a.getColorStateList(R.styleable.LetterBar_lbLetterBarTextColor);
+			}
+			if( a.hasValue(R.styleable.LetterBar_lbOverlayBackground) ) {
+				mOverlayBackground = a.getDrawable(R.styleable.LetterBar_lbOverlayBackground);
+			}
+			mOverlayTextColor = a.getColor(R.styleable.LetterBar_lbOverlayTextColor, mOverlayTextColor);
+			mOverlayTextSize = a.getDimension(R.styleable.LetterBar_lbOverlayTextSize, mOverlayTextSize);
+			
+			a.recycle();
+		}
+	}
+	
+	@Override
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+		if( changed ) {
+			invalidate();
+		}
+		super.onLayout(changed, left, top, right, bottom);
 	}
 	
 	@Override
 	protected void drawableStateChanged() {
-		if( mDD != null && mDD.isStateful() ) {
-			mDD.setState(getDrawableState());
+		if( mLetterBarBackground != null && mLetterBarBackground.isStateful() ) {
+			mLetterBarBackground.setState(getDrawableState());
 		}
 		super.drawableStateChanged();
 	}
 	
 	@Override
 	protected boolean verifyDrawable(Drawable who) {
-		return who == mDD || super.verifyDrawable(who);
+		return who == mLetterBarBackground || super.verifyDrawable(who);
 	}
 	
 	@Override
@@ -140,7 +161,6 @@ public class LetterBarView extends View {
 				break;
 			case MotionEvent.ACTION_UP:
 				mLetterBarFocus = false;
-				mLastIndex = -1;
 				invalidate();
 				dismissLetterOverlay();
 				break;
@@ -156,21 +176,20 @@ public class LetterBarView extends View {
 			
 			@Override
 			public void run() {
-				mSelectedLetter = null;
+				mLastIndex = -1;
 				invalidate();
 			}
-		}, 1000);
+		}, 500);
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
-		
-		calculateLetterBarParams(mLetterSpaceHeight);
+		calculateLetterBarParams();
 		
 		drawLetterBarBackground(canvas);
 		drawLetters(canvas, mLetterBarWidth, mLetterSpaceHeight);
-		
+		drawOverlayLetter(canvas, mLastIndex < 0 ? null : mLetters[mLastIndex]);
 	}
 	
 	/**
@@ -178,11 +197,12 @@ public class LetterBarView extends View {
 	 * <p> 根据字母的高度来计算 导航条的宽度 和 其在 X 轴的位置
 	 * @param letterSpaceHeight 根据字母的高度
 	 */
-	private void calculateLetterBarParams(float letterSpaceHeight) {
+	private void calculateLetterBarParams() {
 		calculateLetterSpaceHeight();
-		
-		// 导航栏的宽度
-		mLetterBarWidth = Math.min( Math.max(letterSpaceHeight, mLetterBarWidth), LETTER_BAR_MAX_WIDTH);
+		if( mLetterBarWidth <= 0 ) {
+			mLetterBarWidth = mLetterSpaceHeight;
+		}
+		mLetterSpaceHeight = Math.min(mLetterBarWidth, mLetterSpaceHeight);
 		// 计算 导航栏在 x 轴的位移
 		mLetterBarXOffset = getWidth() - mLetterBarWidth;
 	}
@@ -203,15 +223,14 @@ public class LetterBarView extends View {
 	 * @param height 该 View 的高度
 	 */
 	private void drawLetterBarBackground(Canvas canvas) {
-		resetPaintForLetterBar(mLetterBarFocus);
-		canvas.drawRect(mLetterBarXOffset, 0, getWidth(), getHeight(), mPaint);
+		// 若不设置，则 会导致 StateListDrawable 无效果
+		setFocusable(mLetterBarFocus);
+		setSelected(mLetterBarFocus);
 		
 		canvas.save();
-		canvas.translate(400, 400);
-		mDD.setBounds(400, 400, 400 + 200, 400 + 200);
-		this.setFocusable(mLetterBarFocus);
-		this.setSelected(mLetterBarFocus);
-		mDD.draw(canvas);
+		canvas.translate(mLetterBarXOffset, 0);
+		mLetterBarBackground.setBounds(0, 0, (int)FloatMath.ceil(mLetterBarWidth), getHeight());
+		mLetterBarBackground.draw(canvas);
 		canvas.restore();
 	}
 	
@@ -222,37 +241,30 @@ public class LetterBarView extends View {
 	 * @param letterSpaceHeight 字母的固定高度
 	 */
 	private void drawLetters(Canvas canvas, float letterBarWidth, float letterSpaceHeight ) {
-		resetPaintForLetter(letterSpaceHeight, false);
+		resetPaintForLetter(letterSpaceHeight);
 		float lastYPos = getPaddingTop() + calculateTextVerticalOffset(letterSpaceHeight, mPaint);
 		for (int i = 0; i < mCount; i++) {
-			boolean isLetterFocus = ( i == mLastIndex );
-			String letter = mLetters[i];
-			if( isLetterFocus ) {
-				resetPaintForLetter(letterSpaceHeight, true);
-			}
+			mPaint.setColor(mLetterBarTexColorStateList.getColorForState(
+					i == mLastIndex ? FOCUSED_STATE_SET : EMPTY_STATE_SET, Color.WHITE));
 			// 设置字的位置为居中显示
 			float xPos = mLetterBarXOffset + letterBarWidth / 2;
-			canvas.drawText(letter, xPos, lastYPos, mPaint);
+			canvas.drawText(mLetters[i], xPos, lastYPos, mPaint);
 			lastYPos += letterSpaceHeight;
-			if( isLetterFocus ) {
-				mSelectedLetter = mLetters[i];
-				drawOverlayLetter(canvas);
-				resetPaintForLetter(letterSpaceHeight, false);
-			}
 		}
 	}
 	
 	/**
-	 * 绘制弹出层上的字母（选中的字母）
+	 * 绘制弹出层上的字母
 	 * @param canvas
+	 * @param letter 要绘制的字母
 	 */
-	private void drawOverlayLetter(Canvas canvas) {
-		if( TextUtils.isEmpty(mSelectedLetter) ) {
+	private void drawOverlayLetter(Canvas canvas, String letter) {
+		if( TextUtils.isEmpty(letter) ) {
 			return;
 		}
 		drawOverlayBackground(canvas);
-		resetPaintForOverlaySelectLetter();
-		canvas.drawText(mSelectedLetter, getWidth() / 2, calculateTextVerticalOffset(getHeight(), mPaint) , mPaint);
+		resetPaintForOverlayLetter();
+		canvas.drawText(letter, getWidth() / 2, calculateTextVerticalOffset(getHeight(), mPaint) , mPaint);
 	}
 	
 	/**
@@ -260,11 +272,20 @@ public class LetterBarView extends View {
 	 * @param canvas
 	 */
 	private void drawOverlayBackground(Canvas canvas) {
-		resetPaintForOverlayBackground();
+		int dWidth = mOverlayBackground.getIntrinsicWidth();
+		int dHeight = mOverlayBackground.getIntrinsicHeight();
+		if( dWidth == 0 || dHeight == 0) {
+			dWidth = dHeight = 200;
+		}
 		// 设置弹出层为屏幕中心
-		mOverlayRect.offsetTo((getWidth() - mOverlayRect.right + mOverlayRect.left) / 2 ,
-				(getHeight() - mOverlayRect.bottom + mOverlayRect.top) / 2);
-		canvas.drawRoundRect(mOverlayRect, mOverlayRound, mOverlayRound, mPaint);
+		canvas.save();
+		canvas.translate(
+				(getWidth() - getPaddingLeft() - getPaddingRight() - dWidth) / 2,
+				(getHeight() - getTop() - getPaddingBottom() - dHeight) / 2);
+		// drawable 要设置 bounds, 否则画不出来
+		mOverlayBackground.setBounds(0, 0, dWidth, dHeight);
+		mOverlayBackground.draw(canvas);
+		canvas.restore();
 	}
 	
 	/**
@@ -278,41 +299,21 @@ public class LetterBarView extends View {
 	/**
 	 * 重设画笔。绘制字母
 	 * @param letterSpaceHeight	字母空间的高度。用此来计算 字体大小
-	 * @param isFocused 字母是否为选中状态
 	 */
-	private void resetPaintForLetter(float letterSpaceHeight, boolean isFocused) {
+	private void resetPaintForLetter(float letterSpaceHeight) {
 		mPaint.reset();
 		mPaint.setTextSize( (letterSpaceHeight > mLetterBarWidth ? mLetterBarWidth : letterSpaceHeight ) * 0.6f);
-		mPaint.setColor(isFocused ? mLetterFocusedColor : mLetterColor);
 		mPaint.setTextAlign(Align.CENTER);
-	}
-	
-	/**
-	 * 重设画笔。绘制导航条
-	 * @param isFocus 导航栏是否为焦点状态
-	 */
-	private void resetPaintForLetterBar(boolean isFocus) {
-		mPaint.reset();
-		// 若导航栏被焦点，则高亮显示
-		mPaint.setColor( isFocus ? mLetterBarFocusedColor : mLetterBarColor);
 	}
 	
 	/**
 	 * 重设画笔。绘制弹出层上的字母
 	 */
-	private void resetPaintForOverlaySelectLetter() {
+	private void resetPaintForOverlayLetter() {
 		mPaint.reset();
 		mPaint.setTextSize(mOverlayTextSize);
 		mPaint.setColor(mOverlayTextColor);
 		mPaint.setTextAlign(Align.CENTER);
-	}
-	
-	/**
-	 *  重设画笔。绘制弹出层背景
-	 */
-	private void resetPaintForOverlayBackground() {
-		mPaint.reset();
-		mPaint.setColor(mOverlayColor);
 	}
 	
 	/**
@@ -336,15 +337,6 @@ public class LetterBarView extends View {
 	}
 	
 	/**
-	 * 设置选中字母弹出层的大小
-	 * @param width	宽度
-	 * @param height 高度
-	 */
-	public void setSelectLetterOverlaySize(float width, float height) {
-		mOverlayRect.set(0, 0, width, height);
-	}
-	
-	/**
 	 * 设置字母条的宽度
 	 * @param width
 	 */
@@ -353,31 +345,61 @@ public class LetterBarView extends View {
 	}
 	
 	/**
-	 * 设置字母条的颜色
-	 * @param normalColor 未获得焦点的颜色
-	 * @param focusedColor 获得焦点的颜色
+	 * 设置字母条的背景
+	 * @param drawableRes 
 	 */
-	public void setLetterBarColor(int normalColor, int focusedColor) {
-		mLetterBarColor = normalColor;
-		mLetterBarFocusedColor = focusedColor;
+	public void setLetterBarBackground(int drawableRes) {
+		mLetterBarBackground = getResources().getDrawable(drawableRes);
+		mLetterBarBackground.setCallback(this);
+	}
+	
+	/**
+	 * 设置字母条的背景
+	 * @param focusedColor 获得焦点的颜色
+	 * @param unfocusedColor 未获得焦点的颜色
+	 */
+	private void setLetterBarBackgrond(int focusedColor, int unfocusedColor) {
+		StateListDrawable sld = new StateListDrawable();
+		Drawable focusedOrSelectedDrawable = new ColorDrawable(focusedColor);
+		sld.addState(FOCUSED_STATE_SET, focusedOrSelectedDrawable);
+		sld.addState(EMPTY_STATE_SET, new ColorDrawable(unfocusedColor));
+		mLetterBarBackground = sld;
+		mLetterBarBackground.setCallback(this);
 	}
 	
 	/**
 	 * 设置字母的颜色
-	 * @param normalColor 未选中的颜色
-	 * @param focusedColor 选中的颜色
+	 * @param colorRes
 	 */
-	public void setLetterColor(int normalColor, int focusedColor) {
-		mLetterColor = normalColor;
-		mLetterFocusedColor = focusedColor;
+	public void setLetterBarTextColor(int colorRes) {
+		mLetterBarTexColorStateList = getResources().getColorStateList(colorRes);
+	}
+	
+	/**
+	 * 设置字母的颜色
+	 * @param focusedColor 未选中的颜色
+	 * @param unfoucsedColor 选中的颜色
+	 */
+	public void setLetterBarTextColor(int focusedColor, int unfoucsedColor) {
+		mLetterBarTexColorStateList = new ColorStateList(
+				new int[][]{FOCUSED_STATE_SET, EMPTY_STATE_SET}, 
+				new int[]{focusedColor, unfoucsedColor});
+	}
+	
+	/**
+	 * 设置字母弹出层的背景
+	 * @param drawableRes
+	 */
+	public void setOverlayBackground(int drawableRes) {
+		mOverlayBackground = getResources().getDrawable(drawableRes);
 	}
 	
 	/**
 	 * 设置字母弹出层的背景颜色
 	 * @param color
 	 */
-	public void setOverlayColor(int color) {
-		mOverlayColor = color;
+	public void setOverlayBackgroundColor(int color) {
+		mOverlayBackground = new ColorDrawable(color);
 	}
 	
 	/**
@@ -386,14 +408,6 @@ public class LetterBarView extends View {
 	 */
 	public void setOverlayTextColor(int color) {
 		mOverlayTextColor = color;
-	}
-	
-	/**
-	 * 设置弹出层的圆角
-	 * @param round
-	 */
-	public void setOverlayRound(float round) {
-		mOverlayRound = round;
 	}
 	
 	/**
