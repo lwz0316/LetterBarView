@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.lwz.letterbarview.lib.LetterBarView;
 import com.lwz.letterbarview.lib.LetterBarView.OnLetterSelectListener;
@@ -64,6 +65,14 @@ public class MainActivity extends Activity {
 		};
 		
 		listView.setAdapter(adapter);
+		listView.setOnItemClickListener(new AlphaAdapter.OnItemClickWrapperListener<News>() {
+
+			@Override
+			public void onItemClick(News itemData) {
+				Toast.makeText(MainActivity.this, itemData.getTitle(), Toast.LENGTH_SHORT).show();
+			}
+			
+		});
 		
 		LetterBarView letterBar = (LetterBarView) findViewById(R.id.letter_bar);
 		letterBar.setOnLetterSelectListener(new OnLetterSelectListener() {

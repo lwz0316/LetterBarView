@@ -1,7 +1,5 @@
 package com.lwz.letterbarview.lib;
 
-import com.lwz.lnb.R;
-
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
@@ -31,6 +29,12 @@ import android.view.View;
  * <p>
  * 当点击导航条的字母时，会触发监听事件,若要监听，则可以使用 {@link #setOnLetterSelectListener(OnLetterSelectListener)} 来设置
  * </p>
+ * 
+ * @attr ref com.lwz.letterbarview.lib.R.styleable#LetterBar_lbLetterBarBackground
+ * @attr ref com.lwz.letterbarview.lib.R.styleable#LetterBar_lbLetterBarTextColor
+ * @attr ref com.lwz.letterbarview.lib.R.styleable#LetterBar_lbOverlayBackground
+ * @attr ref com.lwz.letterbarview.lib.R.styleable#LetterBar_lbOverlayTextColor
+ * @attr ref com.lwz.letterbarview.lib.R.styleable#LetterBar_lbOverlayTextSize
  * 
  */
 public class LetterBarView extends View {

@@ -9,15 +9,33 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.lwz.letterbarview.sample.R;
+/**
+ * 字母导航适配器。根据数据源按字母分类，每一个分类间会有该类的字母来分隔。
+ * 
+ * <p><b>NOTE:</b> 数据源会自动重新按字母排序
+ * 
+ * <p> 由于该适配器的实现会同样对字母分隔 Item 进行点击事件的监听，故若要使点击事件只针对源数据，则应使用 {@link OnItemClickWrapperListener}. 例如
+ * <pre>
+listView.setOnItemClickListener(new AlphaAdapter.OnItemClickWrapperListener&ltNews&gt() {
 
+	public void onItemClick(News itemData) {
+		// TODO
+	}
+			
+});
+</pre>
+ * @author lwz
+ *
+ * @param <T> 数据源类型
+ */
 public abstract class AlphaAdapter<T extends AlphaWrapper> extends BaseAdapter {
 	
-	private final int VIEW_TYPE_ALPHA = 0;
-	private final int VIEW_TYPE_COMMON = 1;
+	private static final int VIEW_TYPE_ALPHA = 0;
+	private static final int VIEW_TYPE_COMMON = 1;
 	
 	private ArrayList<T> mOriginData;
 	private ArrayList<Object> mMergeData;
@@ -52,6 +70,10 @@ public abstract class AlphaAdapter<T extends AlphaWrapper> extends BaseAdapter {
 			}
 			mMergeData.add(item);
 		}
+	}
+	
+	public ArrayList<Object> getMergeData() {
+		return mMergeData;
 	}
 	
 	public boolean containsAlpha(String alpha) {
@@ -119,5 +141,27 @@ public abstract class AlphaAdapter<T extends AlphaWrapper> extends BaseAdapter {
 	}
 	
 	public abstract void bindOriginData(int position, View convertView, T itemData);
+	
+	/**
+	 * 避免 点击字母条响应点击事件。点击事件只针对源数据
+	 * @author lwz
+	 *
+	 * @param <T>
+	 */
+	public static abstract class OnItemClickWrapperListener<T extends AlphaWrapper> implements AdapterView.OnItemClickListener {
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public final void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+			AlphaAdapter<?> adapter = (AlphaAdapter<?>)parent.getAdapter();
+			if( adapter.getItemViewType(position) == VIEW_TYPE_ALPHA ) {
+				return;
+			}
+			onItemClick((T)adapter.getMergeData().get(position));
+		}
+		
+		public abstract void onItemClick(T itemData);
+		
+	}
 
 }
