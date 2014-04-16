@@ -2,7 +2,7 @@
 
 实现了类似于 Android 手机中字母导航功能， 支持导航条自定义字母集。
 
-![](screen_shot.png)
+![](https://bitbucket.org/lwz0316/letternavigationbar/src/0fc251493f74920365fd35a767999f338b0dfac0/screen_shot.png?at=master)
 
 ##如何使用
 
