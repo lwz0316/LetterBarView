@@ -1,0 +1,27 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:letterBar="http://schemas.android.com/apk/res/com.lwz.letterbarview.sample"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white" >
+
+    <ListView
+        android:id="@+id/listview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:cacheColorHint="#00000000"
+        android:paddingRight="20dp" />
+
+    <com.lwz.letterbarview.lib.LetterBarView
+        android:id="@+id/letter_bar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:paddingBottom="10dp"
+        android:paddingTop="10dp"
+        letterBar:lbOverlayTextSize="40sp"
+        letterBar:lbOverlayTextColor="#FFF"
+        letterBar:lbOverlayBackground="@drawable/bg_overlay"
+        letterBar:lbLetterBarTextColor="@color/selector_letterbar_text"
+        letterBar:lbLetterBarBackground="@drawable/bg_letterbar" />
+</FrameLayout>
