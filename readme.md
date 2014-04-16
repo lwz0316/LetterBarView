@@ -47,7 +47,7 @@
 - [Android Custom UI With custom Attributes](http://stackoverflow.com/questions/7608464/android-custom-ui-with-custom-attributes "Android - custom UI with custom attributes") - `stackoverflow.com`
 - [Define Custom Attributes](http://developer.android.com/training/custom-views/create-view.html#customattr) - `developer.android.com`
 
-##########2. 自定义的属性 attr
+#####2. 自定义的属性 attr
 - lbLetterBarBackground - 导航条的背景 应该使用 图片选择器，可以参照 [Selector requires drawable attribute](http://stackoverflow.com/questions/9997943/selector-requires-drawable-attribute) or [drawable-resource](http://developer.android.com/guide/topics/resources/drawable-resource.html#StateList) 
 - lbLetterBarTextColor - 导航条的字母颜色 应该使用颜色选择器，可以参照 [Android selector & text color](http://stackoverflow.com/questions/1219312/android-selector-text-color/3565624#3565624) or [color list resource](http://developer.android.com/guide/topics/resources/color-list-resource.html)
 - lbOverlayBackground - 选中字母弹出层的背景
