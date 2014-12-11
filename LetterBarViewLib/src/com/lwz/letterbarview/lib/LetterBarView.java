@@ -288,22 +288,13 @@ public class LetterBarView extends View {
 		if( TextUtils.isEmpty(letter) ) {
 			return;
 		}
-		drawOverlayBackground(canvas);
-		resetPaintForOverlayLetter();
-		canvas.drawText(letter, getWidth() / 2, calculateTextVerticalOffset(getHeight(), mPaint) , mPaint);
-	}
-	
-	/**
-	 * 绘制选中字母的弹出层背景
-	 * @param canvas
-	 */
-	private void drawOverlayBackground(Canvas canvas) {
+		
 		int dWidth = mOverlayBackground.getIntrinsicWidth();
 		int dHeight = mOverlayBackground.getIntrinsicHeight();
 		if( dWidth == 0 || dHeight == 0) {
 			dWidth = dHeight = 200;
 		}
-		// 设置弹出层为屏幕中心
+		// 设置弹出层为 View 的中心
 		canvas.save();
 		canvas.translate(
 				(getWidth() - getPaddingLeft() - getPaddingRight() - dWidth) / 2,
@@ -311,6 +302,8 @@ public class LetterBarView extends View {
 		// drawable 要设置 bounds, 否则画不出来
 		mOverlayBackground.setBounds(0, 0, dWidth, dHeight);
 		mOverlayBackground.draw(canvas);
+		resetPaintForOverlayLetter();
+		canvas.drawText(letter, dWidth / 2, calculateTextVerticalOffset(dHeight, mPaint) , mPaint);
 		canvas.restore();
 	}
 	
