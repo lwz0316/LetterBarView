@@ -30,6 +30,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.FontMetrics;
+import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
@@ -94,6 +95,7 @@ public class LetterBarView extends View {
 	
 	private int mOverlayTextColor = Color.WHITE;
 	private float mOverlayTextSize = 120;
+	private Point mOverlayOffset = new Point(0, 0);
 	
 	public LetterBarView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
@@ -255,6 +257,7 @@ public class LetterBarView extends View {
 		
 		canvas.save();
 		canvas.translate(mLetterBarXOffset, 0);
+		canvas.clipRect(0, getPaddingTop(), mLetterBarWidth, getHeight());
 		mLetterBarBackground.setBounds(0, 0, (int)FloatMath.ceil(mLetterBarWidth), getHeight());
 		mLetterBarBackground.draw(canvas);
 		canvas.restore();
@@ -267,20 +270,23 @@ public class LetterBarView extends View {
 	 * @param letterSpaceHeight 字母的固定高度
 	 */
 	private void drawLetters(Canvas canvas, float letterBarWidth, float letterSpaceHeight ) {
+		canvas.save();
+		canvas.translate(mLetterBarXOffset, 0);
 		resetPaintForLetter(letterSpaceHeight);
 		float lastYPos = getPaddingTop() + calculateTextVerticalOffset(letterSpaceHeight, mPaint);
+		float xPos = letterBarWidth / 2;
 		for (int i = 0; i < mCount; i++) {
 			mPaint.setColor(mLetterBarTexColorStateList.getColorForState(
 					i == mLastIndex ? FOCUSED_STATE_SET : EMPTY_STATE_SET, Color.WHITE));
 			// 设置字的位置为居中显示
-			float xPos = mLetterBarXOffset + letterBarWidth / 2;
 			canvas.drawText(mLetters[i], xPos, lastYPos, mPaint);
 			lastYPos += letterSpaceHeight;
 		}
+		canvas.restore();
 	}
 	
 	/**
-	 * 绘制弹出层上的字母
+	 * 绘制弹出层上的字母和弹出层
 	 * @param canvas
 	 * @param letter 要绘制的字母
 	 */
@@ -297,8 +303,9 @@ public class LetterBarView extends View {
 		// 设置弹出层为 View 的中心
 		canvas.save();
 		canvas.translate(
-				(getWidth() - getPaddingLeft() - getPaddingRight() - dWidth) / 2,
-				(getHeight() - getTop() - getPaddingBottom() - dHeight) / 2);
+				(getWidth() - getPaddingLeft() - getPaddingRight() - dWidth) / 2 + mOverlayOffset.x,
+				(getHeight() - getTop() - getPaddingBottom() - dHeight) / 2 + mOverlayOffset.y);
+		canvas.clipRect(0, 0, dWidth, dHeight);
 		// drawable 要设置 bounds, 否则画不出来
 		mOverlayBackground.setBounds(0, 0, dWidth, dHeight);
 		mOverlayBackground.draw(canvas);
@@ -452,5 +459,14 @@ public class LetterBarView extends View {
             r = c.getResources();
         setOverlayTextSize(TypedValue.applyDimension(
                 unit, size, r.getDisplayMetrics()));
+	}
+	
+	/**
+	 * 设置浮动文字框的偏移量
+	 * @param xOffset x 轴的偏移量
+	 * @param yOffset y 轴的偏移量
+	 */
+	public void setOverlayOffset(int xOffset, int yOffset) {
+		mOverlayOffset.set(xOffset, yOffset);
 	}
 }
